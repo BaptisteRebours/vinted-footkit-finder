@@ -13,7 +13,7 @@ import time
 # --- Parameters ---
 
 # Saved items
-SAVED_ITEMS_FILE = "vinted_saved_items.json"
+SAVED_ITEMS_FILE = "./data/output/vinted_saved_items.json"
 
 # Search parameters
 SEARCH_TEXT = "maillot arsenal"
@@ -80,7 +80,7 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
                     "url": url_item,
                     "price": price,
                     "url_photo": url_photo,
-                    "date_added": datetime.utcnow().isoformat()
+                    "date_added": datetime.now().isoformat()
                 }
             )
             saved_ids.add(item_id)

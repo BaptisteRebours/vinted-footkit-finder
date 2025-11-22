@@ -9,6 +9,14 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 
+### --- Checking its time to send email ---
+now = datetime.now()
+mail_days = {1, 3, 5}
+if not (now.hour == 22 and now.weekday() in mail_days):
+    print("Not email time, exiting.")
+    exit(0)
+
+
 ### --- Parameters ---
 # Secret parameters
 load_dotenv()
@@ -17,7 +25,7 @@ EMAIL_PORT = os.getenv("EMAIL_PORT")
 EMAIL_PWD = os.getenv("EMAIL_PWD")
 
 # Code parameters
-SAVED_ITEMS_FILE = "vinted_saved_items.json"
+SAVED_ITEMS_FILE = "./data/output/vinted_saved_items.json"
 DAYS_RANGE = 7  
 
 

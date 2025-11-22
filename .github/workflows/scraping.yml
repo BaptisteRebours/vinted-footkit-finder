@@ -1,0 +1,48 @@
+name: Vinted scraping + conditional email
+
+on:
+  schedule:
+    - cron: "0 8-22/2 * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Restore cache
+        uses: actions/cache/restore@v3
+        with:
+          path: data/output/vinted_saved_items.json
+          key: vinted-saved-items
+          restore-keys: vinted-
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Scrape
+        env:
+          ENV: "ci"
+        run: python src/scraper.py
+
+      - name: Save cache
+        uses: actions/cache/save@v3
+        with:
+          path: data/output/vinted_saved_items.json
+          key: vinted-saved-items
+
+      - name: Send email if needed
+        env:
+          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+          EMAIL_PWD: ${{ secrets.EMAIL_PWD }}
+          EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
+          ENV: "ci"
+        run: python src/send_email.py

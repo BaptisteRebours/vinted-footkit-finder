@@ -24,8 +24,7 @@ DESIRED_SIZES = ["XS", "S", "M", "16 ans / 176cm"]
 MAX_RETRIES = 3
 BACKOFF_BASE = 2  
 
-# SEARCH_TEXTS_BRANDS = [SEARCH_TEXT] + [f"{SEARCH_TEXT} {b}" for b in DESIRED_BRANDS]
-SEARCH_TEXTS_BRANDS = [SEARCH_TEXT]
+SEARCH_TEXTS_BRANDS = [SEARCH_TEXT] + [f"{SEARCH_TEXT} {b}" for b in DESIRED_BRANDS]
 
 # Environment
 RUNNING_IN_GITHUB = os.getenv("GITHUB_ACTIONS", "false").lower() == "true"

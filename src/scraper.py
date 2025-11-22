@@ -33,10 +33,15 @@ COOKIES_DIR = Path("./cookies") if PERSIST_COOKIES else None
 
 
 # --- Loading saved items file ---
-try:
-    with open(SAVED_ITEMS_FILE, "r", encoding="utf-8") as f:
-        saved_items = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
+SAVED_ITEMS_FILE.parent.mkdir(parents=True, exist_ok=True)
+if SAVED_ITEMS_FILE.exists():
+    try:
+        with open(SAVED_ITEMS_FILE, "r", encoding="utf-8") as f:
+            saved_items = json.load(f)
+    except json.JSONDecodeError:
+        print("⚠️ Invalid JSON detected, resetting file.")
+        saved_items = []
+else:
     saved_items = []
 
 saved_items_ids = {item["id"] for item in saved_items}

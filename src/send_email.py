@@ -7,10 +7,11 @@ from email.mime.text import MIMEText
 from html import escape
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from zoneinfo import ZoneInfo
 
 
 ### --- Checking its time to send email ---
-now = datetime.now()
+now = datetime.now(ZoneInfo("Europe/Paris"))
 mail_days = {1, 3, 5}
 if not (now.hour == 22 and now.weekday() in mail_days):
     print("Not email time, exiting.")

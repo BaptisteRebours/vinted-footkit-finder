@@ -5,20 +5,20 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from html import escape
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from zoneinfo import ZoneInfo
 
 
-### --- Checking its time to send email ---
+# --- Checking its time to send email ---
 now = datetime.now(ZoneInfo("Europe/Paris"))
 mail_days = {1, 3, 5, 6}
-if not (now.hour == 14 and now.weekday() in mail_days):
+if not (now.hour == 15 and now.weekday() in mail_days):
     print("Not email time, exiting.")
     exit(0)
 
 
-### --- Parameters ---
+# --- Parameters ---
 # Secret parameters
 load_dotenv()
 EMAIL_SENDER = EMAIL_RECEIVER = os.getenv("EMAIL_SENDER")
@@ -27,42 +27,42 @@ EMAIL_PWD = os.getenv("EMAIL_PWD")
 
 # Code parameters
 SAVED_ITEMS_FILE = "./data/output/vinted_saved_items.json"
-DAYS_RANGE = 7  
 
 
-### --- Loading saved items file ---
-try:
-    with open(SAVED_ITEMS_FILE, "r", encoding="utf-8") as f:
-        saved_items = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
-    saved_items = []
+# --- Loading saved items file ---
+if not os.path.exists(SAVED_ITEMS_FILE):
+    print("No state file found.")
+    exit(0)
+
+with open(SAVED_ITEMS_FILE, "r", encoding="utf-8") as f:
+    state = json.load(f)
+
+last_email_sent = state.get("last_email_sent")
+saved_items = state.get("items", [])
 
 
-### --- FIltering new items ---
-def get_recent_items(items, days=7):
-    now = datetime.utcnow()
-    limit_date = now - timedelta(days=days)
+# --- FIltering new items ---
+def items_since_last_email(items, last_sent):
+    if last_sent is None:
+        return items
 
-    recent = []
+    threshold = datetime.fromisoformat(last_sent)
+    out = []
+
     for item in items:
-        date_str = item.get("date_added")
-        if not date_str:
-            continue
         try:
-            added = datetime.fromisoformat(date_str)
+            added = datetime.fromisoformat(item["date_added"]).astimezone(timezone.utc)
+            if added > threshold:
+                out.append(item)
         except:
-            continue
-        
-        if added >= limit_date:
-            recent.append(item)
-
-    return recent
+            pass
+    return out
 
 
-recent_items = get_recent_items(saved_items, DAYS_RANGE)
+recent_items = items_since_last_email(saved_items, last_email_sent)
 
 
-### --- Sending email ---
+# --- Sending email ---
 def build_email_html(items):
     html = """\
     <html>
@@ -150,16 +150,13 @@ def build_email_html(items):
 
     return html
 
-
-
 html_body = build_email_html(recent_items)
-
 
 print("Sending email...")
 
 context = ssl.create_default_context()
 message = MIMEMultipart("alternative")
-message["Subject"] = f"New kits - week {datetime.today().strftime('%Y-%m-%d')}"
+message["Subject"] = "New Vinted kits"
 message["From"] = EMAIL_SENDER
 message["To"] = EMAIL_RECEIVER
 
@@ -174,3 +171,12 @@ with smtplib.SMTP_SSL("smtp.gmail.com", port=EMAIL_PORT, context=context) as ser
     )
 
 print("Email sent.")
+
+
+# --- Update last_email_sent ---
+state["last_email_sent"] = datetime.now(timezone.utc).isoformat()
+
+with open(SAVED_ITEMS_FILE, "w", encoding="utf-8") as f:
+    json.dump(state, f, ensure_ascii=False, indent=2)
+
+print("State updated.")

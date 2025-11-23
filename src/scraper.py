@@ -2,20 +2,21 @@ import asyncio
 import random
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode
 from vinted_api_kit import VintedApi
 from aiohttp import ClientError
-import time
 
 
 # --- Parameters ---
 
 # Saved items
 SAVED_ITEMS_FILE = "./data/output/vinted_saved_items.json"
+os.makedirs(os.path.dirname(SAVED_ITEMS_FILE), exist_ok=True)
 
 # Search parameters
+BASE_URL = "https://www.vinted.fr/catalog?"
 SEARCH_TEXT = "maillot arsenal"
 ORDER = "newest_first"
 DESIRED_BRANDS = ["nike", "adidas"]
@@ -30,20 +31,29 @@ SEARCH_TEXTS_BRANDS = [SEARCH_TEXT] + [f"{SEARCH_TEXT} {b}" for b in DESIRED_BRA
 RUNNING_IN_GITHUB = os.getenv("GITHUB_ACTIONS", "false").lower() == "true"
 PERSIST_COOKIES = not RUNNING_IN_GITHUB
 COOKIES_DIR = Path("./cookies") if PERSIST_COOKIES else None
+if COOKIES_DIR :
+    COOKIES_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # --- Loading saved items file ---
-os.makedirs(os.path.dirname(SAVED_ITEMS_FILE), exist_ok=True)
-if os.path.exists(SAVED_ITEMS_FILE):
+def load_state():
+    if not os.path.exists(SAVED_ITEMS_FILE):
+        return {"last_email_sent": None, "items": []}
+
     try:
         with open(SAVED_ITEMS_FILE, "r", encoding="utf-8") as f:
-            saved_items = json.load(f)
+            data = json.load(f)
     except json.JSONDecodeError:
-        print("Invalid JSON detected, resetting file.")
-        saved_items = []
-else:
-    saved_items = []
+        return {"last_email_sent": None, "items": []}
 
+    # Force correct format
+    return {
+        "last_email_sent": data.get("last_email_sent"),
+        "items": data.get("items", [])
+    }
+
+state = load_state()
+saved_items = state["items"]
 saved_items_ids = {item["id"] for item in saved_items}
 
 
@@ -85,7 +95,7 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
                     "url": url_item,
                     "price": price,
                     "url_photo": url_photo,
-                    "date_added": datetime.now().isoformat()
+                    "date_added": datetime.now(timezone.utc).isoformat()
                 }
             )
             saved_ids.add(item_id)
@@ -98,26 +108,27 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
 # --- Scraping ---
 
 async def main():
-    # URL
-    base_url = "https://www.vinted.fr/catalog?"
+    print("Running scraper...")
 
     async with VintedApi(
         locale="fr",
         cookies_dir=COOKIES_DIR,
         persist_cookies=PERSIST_COOKIES,
     ) as vinted:
+        
         for search_text in SEARCH_TEXTS_BRANDS:
             params = {"search_text": search_text, "order": ORDER}
-            search_url = base_url + urlencode(params, doseq=True)
+            search_url = BASE_URL + urlencode(params, doseq=True)
 
             # Sleeping
             await asyncio.sleep(random.uniform(1.5, 3.0))
 
             # Attempts with backoff in case of error
+            new_saved_items = []
             for attempt in range(1, MAX_RETRIES + 1):
                 try:
                     # Fetching
-                    print(f"Sending request to {search_url} (attempt {attempt+1})")
+                    print(f"Sending request to {search_url} (attempt {attempt})")
                     items = await vinted.search_items(url=search_url)
                     print(f"{len(items)} items fetched")
 
@@ -135,7 +146,6 @@ async def main():
                     if attempt == MAX_RETRIES:
                         print("Maximum retries for this search_text - stop.")
                         break
-
                     backoff = (BACKOFF_BASE ** attempt) + random.uniform(0, 1.0)
                     print(f"Waiting before retry: {backoff:.1f}s")
                     await asyncio.sleep(backoff)
@@ -144,17 +154,20 @@ async def main():
                     print(f"Unexpected error: {e}")
                     break
             
-            # --- Updating saved items file ---    
+            # Updating saved items file
             if new_saved_items:
-                saved_items.extend(new_saved_items)
-                with open(SAVED_ITEMS_FILE, "w", encoding="utf-8") as f:
-                    json.dump(saved_items, f, ensure_ascii=False, indent=2)    
+                saved_items.extend(new_saved_items) 
                 print(f"{len(new_saved_items)} new items saved")
-            else:
-                print(f"No item saved")
+    
+    # Save updated state
+    new_state = {
+        "last_email_sent": state["last_email_sent"],
+        "items": saved_items
+    }
+    with open(SAVED_ITEMS_FILE, "w", encoding="utf-8") as f:
+        json.dump(new_state, f, ensure_ascii=False, indent=2)
+    print("Scraper finished.")
 
 
 if __name__ == "__main__":
-    start = time.time()
     asyncio.run(main())
-    print(time.time() - start)

@@ -15,10 +15,12 @@ jobs:
 
       - name: Restore cache
         uses: actions/cache/restore@v3
+        id: cache
         with:
           path: data/output/vinted_saved_items.json
-          key: vinted-saved-items
-          restore-keys: vinted-
+          key: vinted-saved-items-${{ github.run_id }}
+          restore-keys: |
+            vinted-saved-items-
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -37,7 +39,7 @@ jobs:
         uses: actions/cache/save@v3
         with:
           path: data/output/vinted_saved_items.json
-          key: vinted-saved-items
+          key: vinted-saved-items-${{ github.run_id }}
 
       - name: Send email if needed
         env:

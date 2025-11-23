@@ -12,8 +12,8 @@ from zoneinfo import ZoneInfo
 
 # --- Checking its time to send email ---
 now = datetime.now(ZoneInfo("Europe/Paris"))
-mail_days = {1, 3, 5, 6}
-if not (now.hour == 15 and now.weekday() in mail_days):
+mail_days = {1, 4, 6}
+if not (now.hour == 22 and now.weekday() in mail_days):
     print("Not email time, exiting.")
     exit(0)
 

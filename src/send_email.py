@@ -12,8 +12,8 @@ from zoneinfo import ZoneInfo
 
 # --- Checking its time to send email ---
 now = datetime.now(ZoneInfo("Europe/Paris"))
-mail_days = {0, 3, 6}
-if not (now.hour >= 14 and now.weekday() in mail_days):
+mail_days = {0, 2, 6}
+if not (now.hour >= 22 and now.weekday() in mail_days):
     print("Not email time, exiting.")
     exit(0)
 
@@ -40,15 +40,6 @@ with open(SAVED_ITEMS_FILE, "r", encoding="utf-8") as f:
 last_email_sent = state.get("last_email_sent")
 saved_items = state.get("items", [])
 
-print(f"DEBUG 1 last_email_sent: {last_email_sent}, type ({type(last_email_sent)})")
-
-
-if last_email_sent:
-    last_email_dt = datetime.fromisoformat(last_email_sent)
-else:
-    last_email_dt = None
-
-print(f"DEBUG 2 last_email_sent: {last_email_sent}, type ({type(last_email_sent)})")
 
 
 # --- FIltering new items ---
@@ -98,6 +89,8 @@ def build_email_html(items):
             photo = escape(item.get("url_photo", "https://via.placeholder.com/300x300?text=No+Image"))
             brand = escape(item.get("brand") or "Unknown brand")
             size = escape(item.get("size") or "Unknown size")
+            season = escape(item.get("season") or "Unknown season")
+            kit_type = escape(item.get("kit_type") or "Unknown kit type")
             price = item.get("price", "?")
 
             # Divider between cards (skip the first one)
@@ -136,6 +129,8 @@ def build_email_html(items):
                                 border-radius:8px; margin-bottom:18px; font-size:15px; color:#333;">
                         <div><strong>Brand:</strong> {brand}</div>
                         <div><strong>Size:</strong> {size}</div>
+                        <div><strong>Season:</strong> {season}</div>
+                        <div><strong>Kit type:</strong> {kit_type}</div>
                         <div><strong>Price:</strong> {price}€</div>
                     </div>
 

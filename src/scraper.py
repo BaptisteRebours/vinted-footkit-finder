@@ -8,6 +8,8 @@ from urllib.parse import urlencode
 from vinted_api_kit import VintedApi
 from aiohttp import ClientError
 
+from utils import extract_season, extract_kit_type
+
 
 # --- Parameters ---
 
@@ -76,6 +78,9 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
 
         if not title:
             continue
+        else:
+            season = extract_season(title)
+            kit_type = extract_kit_type(title)
 
         is_match = (
             "maillot" in title.lower()
@@ -92,6 +97,8 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
                     "brand": brand,
                     "status": status,
                     "size": size,
+                    "season": season,
+                    "kit_type": kit_type,
                     "url": url_item,
                     "price": price,
                     "url_photo": url_photo,

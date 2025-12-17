@@ -1,6 +1,10 @@
 import re
 import unicodedata
 from rapidfuzz import fuzz, process
+import easyocr
+import requests
+import cv2
+import numpy as np
 
 
 # --- Parameters ---
@@ -40,6 +44,17 @@ for kit_type, keywords in KIT_TYPE_KEYWORDS.items():
         ALL_KIT_KEYWORDS.append(kw)
         KEYWORD_TO_TYPE[kw] = kit_type
 
+
+# Players
+PLAYERS = [
+    "saka", "odegaard", "martinelli", "saliba", "gabriel",
+    "white", "trossard", "jesus", "smithrowe", "havertz", "walcott",
+    "henry", "pires", "vieira", "bergkamp", "adams", "ljungberg", "campbell",
+    "cazorla", "wilshere", "koscielny", "lewisskelly", "nwaneri", "coquelin"
+]
+SPONSOR_WORDS = ["fly", "emirates", "adidas", "puma", "nike", "climalite", "aeroready"]
+LANGS = ["en"]
+reader = easyocr.Reader(LANGS)
 
 
 # --- Functions ---
@@ -147,23 +162,61 @@ def extract_kit_type(title):
 
 
 
-# --- TEST ---
+# Player name
+def guess_player_name(ocr_text, players_list, threshold=70):
+    if not ocr_text:
+        return None
+    
+    text = normalize(ocr_text, input_type="player")
+
+    # hard filter: ignore sponsors
+    if any(w in text for w in SPONSOR_WORDS):
+        return None
+
+    # fuzzy matching
+    match, score, idx = process.extractOne(text, players_list, scorer=fuzz.ratio)
+
+    # threshold condition
+    if score < threshold:
+        return None
+
+    # length similarity condition (avoid matching "fly emirates")
+    if abs(len(text) - len(match)) > 3:
+        return None
+
+    return match
 
 
-test_titles = [
-    "Maillot domicile Arsenal 23/24",
-    "Arsenal away kit 2023-24",
-    "Maillot third Arsenal 2024",
-    "Arsenal maillot extérieur vintage",
-    "arsenal odegaard 8 domucile",
-    "arsenal exterrieur ok"
-]
+def extract_player_name_ocr(image_url: str):
+    try:
+        response = requests.get(image_url, timeout=15)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        print(f"Failed to download image: {e}")
+        return None
 
-for title in test_titles:
-    print(extract_kit_type(title))
+    # Convert image bytes to numpy array
+    image_bytes = np.frombuffer(response.content, np.uint8)
 
+    # Decode image (supports jpeg, png, webp, etc.)
+    image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
 
+    if image is None:
+        print("Failed to decode image")
+        return None
 
+    # OCR
+    result = reader.readtext(image)
 
+    extracted_texts = [text for (_, text, _) in result]
+    print(extracted_texts)
 
+    # Try to find player name among detected texts
+    detected_player = None
+    for txt in extracted_texts:
+        candidate = guess_player_name(txt, PLAYERS)
+        if candidate:
+            detected_player = candidate
+            break
 
+    return detected_player

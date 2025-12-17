@@ -8,7 +8,11 @@ from urllib.parse import urlencode
 from vinted_api_kit import VintedApi
 from aiohttp import ClientError
 
-from utils import extract_season, extract_kit_type
+from utils import (
+    extract_season, 
+    extract_kit_type, 
+    extract_player_name_ocr,
+)
 
 
 # --- Parameters ---
@@ -81,7 +85,7 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
         else:
             season = extract_season(title)
             kit_type = extract_kit_type(title)
-
+            
         is_match = (
             "maillot" in title.lower()
             and "arsenal" in title.lower()
@@ -89,23 +93,30 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
             and (size in desired_sizes or size is None)
         )
 
-        if is_match and item_id not in saved_ids:
-            new_items.append(
-                {
-                    "id": item_id,
-                    "title": title,
-                    "brand": brand,
-                    "status": status,
-                    "size": size,
-                    "season": season,
-                    "kit_type": kit_type,
-                    "url": url_item,
-                    "price": price,
-                    "url_photo": url_photo,
-                    "date_added": datetime.now(timezone.utc).isoformat()
-                }
-            )
-            saved_ids.add(item_id)
+        player_name = None
+
+        if is_match and url_photo:
+            
+            player_name = extract_player_name_ocr(url_photo)
+
+            if player_name and item_id not in saved_ids:
+                new_items.append(
+                    {
+                        "id": item_id,
+                        "title": title,
+                        "brand": brand,
+                        "status": status,
+                        "size": size,
+                        "season": season,
+                        "kit_type": kit_type,
+                        "player_name": player_name,
+                        "url": url_item,
+                        "price": price,
+                        "url_photo": url_photo,
+                        "date_added": datetime.now(timezone.utc).isoformat()
+                    }
+                )
+                saved_ids.add(item_id)
 
     return new_items
 

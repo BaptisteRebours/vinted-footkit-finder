@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 
 # --- Checking its time to send email ---
 now = datetime.now(ZoneInfo("Europe/Paris"))
-mail_days = {0, 2, 6}
+mail_days = {0, 3, 6}
 if not (now.hour >= 22 and now.weekday() in mail_days):
     print("Not email time, exiting.")
     exit(0)
@@ -91,6 +91,7 @@ def build_email_html(items):
             size = escape(item.get("size") or "Unknown size")
             season = escape(item.get("season") or "Unknown season")
             kit_type = escape(item.get("kit_type") or "Unknown kit type")
+            player_name = escape(item.get("player_name") or "Unknown player")
             price = item.get("price", "?")
 
             # Divider between cards (skip the first one)
@@ -131,6 +132,7 @@ def build_email_html(items):
                         <div><strong>Size:</strong> {size}</div>
                         <div><strong>Season:</strong> {season}</div>
                         <div><strong>Kit type:</strong> {kit_type}</div>
+                        <div><strong>Kit type:</strong> {player_name}</div>
                         <div><strong>Price:</strong> {price}€</div>
                     </div>
 

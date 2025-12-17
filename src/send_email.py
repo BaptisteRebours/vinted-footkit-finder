@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 # --- Checking its time to send email ---
 now = datetime.now(ZoneInfo("Europe/Paris"))
 mail_days = {0, 3, 6}
-if not (now.hour >= 21 and now.weekday() in mail_days):
+if not (now.hour >= 14 and now.weekday() in mail_days):
     print("Not email time, exiting.")
     exit(0)
 
@@ -40,7 +40,15 @@ with open(SAVED_ITEMS_FILE, "r", encoding="utf-8") as f:
 last_email_sent = state.get("last_email_sent")
 saved_items = state.get("items", [])
 
-print(f"DEBUG last_email_sent: {last_email_sent}, type ({type(last_email_sent)})")
+print(f"DEBUG 1 last_email_sent: {last_email_sent}, type ({type(last_email_sent)})")
+
+
+if last_email_sent:
+    last_email_dt = datetime.fromisoformat(last_email_sent)
+else:
+    last_email_dt = None
+
+print(f"DEBUG 2 last_email_sent: {last_email_sent}, type ({type(last_email_sent)})")
 
 
 # --- FIltering new items ---

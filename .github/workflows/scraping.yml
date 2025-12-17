@@ -35,12 +35,6 @@ jobs:
           ENV: "ci"
         run: python src/scraper.py
 
-      - name: Save cache
-        uses: actions/cache/save@v3
-        with:
-          path: data/output/vinted_saved_items.json
-          key: vinted-saved-items-${{ github.run_id }}
-
       - name: Send email if needed
         env:
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
@@ -48,3 +42,9 @@ jobs:
           EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
           ENV: "ci"
         run: python src/send_email.py
+
+      - name: Save cache
+        uses: actions/cache/save@v3
+        with:
+          path: data/output/vinted_saved_items.json
+          key: vinted-saved-items-${{ github.run_id }}

@@ -4,32 +4,6 @@ from html import escape
 
 
 # --- Functions ---
-def items_since_last_email(items, last_sent):
-    """Filter items added since last email sent timestamp.
-    
-    Args:
-        items (list): List of item dicts with "date_added" key.
-        last_sent (str|None): ISO format timestamp of last email sent.
-    
-    Returns:
-        list: Filtered list of items added after last_sent.
-    """
-    if last_sent is None:
-        return items
-
-    threshold = datetime.fromisoformat(last_sent)
-    out = []
-
-    for item in items:
-        try:
-            added = datetime.fromisoformat(item["date_added"]).astimezone(timezone.utc)
-            if added > threshold:
-                out.append(item)
-        except:
-            pass
-    return out
-
-
 def build_email_html(items):
     """Build HTML body for email listing new items.
     
@@ -60,11 +34,7 @@ def build_email_html(items):
         for item in items:
             title = escape(item.get("title", "Untitled"))
             url = escape(item.get("url", "#"))
-            photos = item.get("urls_photo", [])
-            if photos:
-                photo = escape(photos[0], "https://via.placeholder.com/300x300?text=No+Image")
-            else:
-                photo = "https://via.placeholder.com/300x300?text=No+Image"
+            photo = escape(item.get("url_photo", "https://via.placeholder.com/300x300?text=No+Image"))
             brand = escape(item.get("brand") or "Unknown brand")
             size = escape(item.get("size") or "Unknown size")
             season = escape(item.get("season") or "Unknown season")

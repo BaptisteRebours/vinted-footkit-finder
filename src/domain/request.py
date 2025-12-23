@@ -1,7 +1,7 @@
 # --- Parameters ---
 
-# Saved items file
-SAVED_ITEMS_FILE = "./data/output/vinted_saved_items.json"
+# Saved items db
+SAVED_ITEMS_DB = "./data/output/vinted.db"
 
 # Request parameters
 BASE_URL = "https://www.vinted.fr/catalog?"

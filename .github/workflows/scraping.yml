@@ -13,14 +13,13 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Restore cache
-        uses: actions/cache/restore@v3
-        id: cache
+      - name: Restore SQLite cache
+        uses: actions/cache@v3
         with:
-          path: data/output/vinted_saved_items.json
-          key: vinted-saved-items-${{ github.run_id }}
+          path: data/output/vinted.db
+          key: vinted-db
           restore-keys: |
-            vinted-saved-items-
+            vinted-db
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -43,8 +42,8 @@ jobs:
           ENV: "ci"
         run: python src/send_email.py
 
-      - name: Save cache
-        uses: actions/cache/save@v3
+      - name: Save SQLite cache
+        uses: actions/cache@v3
         with:
-          path: data/output/vinted_saved_items.json
-          key: vinted-saved-items-${{ github.run_id }}
+          path: data/output/vinted.db
+          key: vinted-db

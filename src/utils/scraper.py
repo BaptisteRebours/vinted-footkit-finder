@@ -1,6 +1,4 @@
 # --- Imports ---
-import os
-import json
 from datetime import datetime, timezone
 
 from utils.extract_info import (
@@ -8,7 +6,7 @@ from utils.extract_info import (
     extract_season,
 )
 from utils.ocr import extract_player_name_ocr
-from domain.request import SAVED_ITEMS_FILE, MY_KITS
+from domain.request import MY_KITS
 
 
 # --- Parameters ---
@@ -18,28 +16,6 @@ MY_KITS_SEASON_KITTYPE = [
 
 
 # --- Functions ---
-def load_state():
-    """Load saved items state from file.
-    
-    Returns:
-        dict: State dictionary with 'last_email_sent' and 'items' keys.
-    """
-    if not os.path.exists(SAVED_ITEMS_FILE):
-        return {"last_email_sent": None, "items": []}
-
-    try:
-        with open(SAVED_ITEMS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except json.JSONDecodeError:
-        return {"last_email_sent": None, "items": []}
-
-    # Force correct format
-    return {
-        "last_email_sent": data.get("last_email_sent"),
-        "items": data.get("items", [])
-    }
-
-
 def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
     """Filter and build new items from scraped data.
 
@@ -92,6 +68,7 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
             for url_photo in urls_photo:
                 player_name = extract_player_name_ocr(url_photo)
                 if player_name:
+                    final_url_photo = url_photo
                     break
             
             item_to_add = (
@@ -113,7 +90,7 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
                         "player_name": player_name,
                         "url": url_item,
                         "price": price,
-                        "urls_photo": urls_photo,
+                        "url_photo": final_url_photo,
                         "date_added": datetime.now(timezone.utc).isoformat()
                     }
                 )

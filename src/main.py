@@ -1,16 +1,15 @@
 # --- Imports ---
 import asyncio
 import random
-import json
 import os
-from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode
 from vinted_api_kit import VintedApi
 from aiohttp import ClientError
+import sqlite3
 
 from domain.request import (
-    SAVED_ITEMS_FILE,
+    SAVED_ITEMS_DB,
     BASE_URL,
     ORDER,
     MAX_RETRIES,
@@ -19,13 +18,14 @@ from domain.request import (
     DESIRED_BRANDS,
     DESIRED_SIZES,
 )
-from utils.scraper import load_state, filter_and_build_items
+from utils.scraper import filter_and_build_items
+from utils.sqlite import create_table, get_all_items, insert_into_sqlite
 
 
 # --- Parameters ---
 
 # Saved items
-os.makedirs(os.path.dirname(SAVED_ITEMS_FILE), exist_ok=True)
+CONN = sqlite3.connect(SAVED_ITEMS_DB)
 
 # Search parameters
 SEARCH_TEXTS_BRANDS = [SEARCH_TEXT] + [f"{SEARCH_TEXT} {b}" for b in DESIRED_BRANDS]
@@ -38,9 +38,9 @@ if COOKIES_DIR :
     COOKIES_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# --- Loading saved items file ---
-state = load_state()
-saved_items = state["items"]
+# --- Loading saved items db ---
+create_table()
+saved_items = get_all_items()
 saved_items_ids = {item["id"] for item in saved_items}
 
 
@@ -92,18 +92,12 @@ async def main():
                     print(f"Unexpected error: {e}")
                     break
             
-            # Updating saved items file
+            # Updating saved items db
             if new_saved_items:
-                saved_items.extend(new_saved_items) 
+                for item in new_saved_items:
+                    insert_into_sqlite(item)
                 print(f"{len(new_saved_items)} new items saved")
     
-    # Save updated state
-    new_state = {
-        "last_email_sent": state["last_email_sent"],
-        "items": saved_items
-    }
-    with open(SAVED_ITEMS_FILE, "w", encoding="utf-8") as f:
-        json.dump(new_state, f, ensure_ascii=False, indent=2)
     print("Scraper finished.")
 
 

@@ -1,11 +1,13 @@
 # --- Imports ---
 import sqlite3
 import json
+import os
 
-from domain.request import SAVED_ITEMS_DB
+from domain.request import SAVED_ITEMS_DB, OUTPUT_DIR
 
 
 # --- Parameters ---
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 CONN = sqlite3.connect(SAVED_ITEMS_DB)
 CURSOR = CONN.cursor()
 

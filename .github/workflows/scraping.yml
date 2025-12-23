@@ -33,7 +33,7 @@ jobs:
       - name: Scrape
         env:
           ENV: "ci"
-        run: python src/scraper.py
+        run: python src/main.py
 
       - name: Send email if needed
         env:

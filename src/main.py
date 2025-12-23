@@ -1,3 +1,4 @@
+# --- Imports ---
 import asyncio
 import random
 import json
@@ -8,29 +9,25 @@ from urllib.parse import urlencode
 from vinted_api_kit import VintedApi
 from aiohttp import ClientError
 
-from utils import (
-    extract_season, 
-    extract_kit_type, 
-    extract_player_name_ocr,
+from domain.request import (
+    SAVED_ITEMS_FILE,
+    BASE_URL,
+    ORDER,
+    MAX_RETRIES,
+    BACKOFF_BASE,
+    SEARCH_TEXT,
+    DESIRED_BRANDS,
+    DESIRED_SIZES,
 )
+from utils.scraper import load_state, filter_and_build_items
 
 
 # --- Parameters ---
 
 # Saved items
-SAVED_ITEMS_FILE = "./data/output/vinted_saved_items.json"
 os.makedirs(os.path.dirname(SAVED_ITEMS_FILE), exist_ok=True)
 
 # Search parameters
-BASE_URL = "https://www.vinted.fr/catalog?"
-SEARCH_TEXT = "maillot arsenal"
-ORDER = "newest_first"
-DESIRED_BRANDS = ["nike", "adidas"]
-DESIRED_SIZES = ["XS", "S", "M", "16 ans / 176cm"]
-
-MAX_RETRIES = 3
-BACKOFF_BASE = 2  
-
 SEARCH_TEXTS_BRANDS = [SEARCH_TEXT] + [f"{SEARCH_TEXT} {b}" for b in DESIRED_BRANDS]
 
 # Environment
@@ -42,97 +39,12 @@ if COOKIES_DIR :
 
 
 # --- Loading saved items file ---
-def load_state():
-    if not os.path.exists(SAVED_ITEMS_FILE):
-        return {"last_email_sent": None, "items": []}
-
-    try:
-        with open(SAVED_ITEMS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except json.JSONDecodeError:
-        return {"last_email_sent": None, "items": []}
-
-    # Force correct format
-    return {
-        "last_email_sent": data.get("last_email_sent"),
-        "items": data.get("items", [])
-    }
-
 state = load_state()
 saved_items = state["items"]
 saved_items_ids = {item["id"] for item in saved_items}
 
 
 # --- Functions ---
-def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
-    new_items = []
-
-    for item in items:
-        data = item.raw_data or {}
-
-        item_id = str(data.get("id"))
-        title = (data.get("title") or "").strip()
-        brand = (data.get("brand_title") or "")
-        brand = brand.lower() if brand else None
-        size = data.get("size_title")
-        status = data.get("status")
-        url_item = data.get("url")
-        price = (data.get("price") or {}).get("amount")
-        photos = data.get('photos') or []
-        urls_photo = [
-            photo.get("full_size_url") for photo in photos if photo.get("full_size_url")
-        ] if photos else []
-
-        if item_id in saved_ids:
-            continue
-
-        if not title:
-            continue
-        else:
-            season = extract_season(title)
-            kit_type = extract_kit_type(title)
-            
-        is_match = (
-            "maillot" in title.lower()
-            and "arsenal" in title.lower()
-            and (brand in desired_brands or brand is None)
-            and (size in desired_sizes or size is None)
-        )
-
-        player_name = None
-
-        if is_match and urls_photo:
-            for url_photo in urls_photo:
-                player_name = extract_player_name_ocr(url_photo)
-                if player_name:
-                    break
-
-            if player_name and item_id not in saved_ids:
-                new_items.append(
-                    {
-                        "id": item_id,
-                        "title": title,
-                        "brand": brand,
-                        "status": status,
-                        "size": size,
-                        "season": season,
-                        "kit_type": kit_type,
-                        "player_name": player_name,
-                        "url": url_item,
-                        "price": price,
-                        "urls_photo": urls_photo,
-                        "date_added": datetime.now(timezone.utc).isoformat()
-                    }
-                )
-                saved_ids.add(item_id)
-
-    return new_items
-
-
-
-
-# --- Scraping ---
-
 async def main():
     print("Running scraper...")
 
@@ -195,5 +107,6 @@ async def main():
     print("Scraper finished.")
 
 
+# --- Running main ---
 if __name__ == "__main__":
     asyncio.run(main())

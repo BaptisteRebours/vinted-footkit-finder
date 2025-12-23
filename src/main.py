@@ -7,6 +7,8 @@ from urllib.parse import urlencode
 from vinted_api_kit import VintedApi
 from aiohttp import ClientError
 import sqlite3
+import traceback
+import sys
 
 from domain.request import (
     SAVED_ITEMS_DB,
@@ -46,59 +48,65 @@ saved_items_ids = {item["id"] for item in saved_items}
 
 # --- Functions ---
 async def main():
-    print("Running scraper...")
+    try:
+        print("Running scraper...")
 
-    async with VintedApi(
-        locale="fr",
-        cookies_dir=COOKIES_DIR,
-        persist_cookies=PERSIST_COOKIES,
-    ) as vinted:
-        
-        for search_text in SEARCH_TEXTS_BRANDS:
-            params = {"search_text": search_text, "order": ORDER}
-            search_url = BASE_URL + urlencode(params, doseq=True)
-
-            # Sleeping
-            await asyncio.sleep(random.uniform(1.5, 3.0))
-
-            # Attempts with backoff in case of error
-            new_saved_items = []
-            for attempt in range(1, MAX_RETRIES + 1):
-                try:
-                    # Fetching
-                    print(f"Sending request to {search_url} (attempt {attempt})")
-                    items = await vinted.search_items(url=search_url)
-                    print(f"{len(items)} items fetched")
-
-                    # Processing each item
-                    new_saved_items = filter_and_build_items(
-                        items,
-                        DESIRED_BRANDS,
-                        DESIRED_SIZES,
-                        saved_items_ids
-                    )
-                    break
-
-                except ClientError as e:
-                    print(f"Client error: {e}")
-                    if attempt == MAX_RETRIES:
-                        print("Maximum retries for this search_text - stop.")
-                        break
-                    backoff = (BACKOFF_BASE ** attempt) + random.uniform(0, 1.0)
-                    print(f"Waiting before retry: {backoff:.1f}s")
-                    await asyncio.sleep(backoff)
-                
-                except Exception as e:
-                    print(f"Unexpected error: {e}")
-                    break
+        async with VintedApi(
+            locale="fr",
+            cookies_dir=COOKIES_DIR,
+            persist_cookies=PERSIST_COOKIES,
+        ) as vinted:
             
-            # Updating saved items db
-            if new_saved_items:
-                for item in new_saved_items:
-                    insert_into_sqlite(item)
-                print(f"{len(new_saved_items)} new items saved")
+            for search_text in SEARCH_TEXTS_BRANDS:
+                params = {"search_text": search_text, "order": ORDER}
+                search_url = BASE_URL + urlencode(params, doseq=True)
+
+                # Sleeping
+                await asyncio.sleep(random.uniform(1.5, 3.0))
+
+                # Attempts with backoff in case of error
+                new_saved_items = []
+                for attempt in range(1, MAX_RETRIES + 1):
+                    try:
+                        # Fetching
+                        print(f"Sending request to {search_url} (attempt {attempt})")
+                        items = await vinted.search_items(url=search_url)
+                        print(f"{len(items)} items fetched")
+
+                        # Processing each item
+                        new_saved_items = filter_and_build_items(
+                            items,
+                            DESIRED_BRANDS,
+                            DESIRED_SIZES,
+                            saved_items_ids
+                        )
+                        break
+
+                    except ClientError as e:
+                        print(f"Client error: {e}")
+                        if attempt == MAX_RETRIES:
+                            print("Maximum retries for this search_text - stop.")
+                            break
+                        backoff = (BACKOFF_BASE ** attempt) + random.uniform(0, 1.0)
+                        print(f"Waiting before retry: {backoff:.1f}s")
+                        await asyncio.sleep(backoff)
+                    
+                    except Exception as e:
+                        print(f"Unexpected error: {e}")
+                        break
+                
+                # Updating saved items db
+                if new_saved_items:
+                    for item in new_saved_items:
+                        insert_into_sqlite(item)
+                    print(f"{len(new_saved_items)} new items saved")
+        
+        print("Scraper finished.")
     
-    print("Scraper finished.")
+    except Exception as e:
+        print("Fatal error in main:")
+        traceback.print_exc()
+        sys.exit(1)
 
 
 # --- Running main ---

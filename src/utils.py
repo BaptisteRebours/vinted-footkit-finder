@@ -163,7 +163,7 @@ def extract_kit_type(title):
 
 
 # Player name
-def guess_player_name(ocr_text, players_list, threshold=70):
+def guess_player_name(ocr_text, players_list, threshold=85):
     if not ocr_text:
         return None
     
@@ -209,13 +209,13 @@ def extract_player_name_ocr(image_url: str):
     result = reader.readtext(image)
 
     extracted_texts = [text for (_, text, _) in result]
-    print(extracted_texts)
 
     # Try to find player name among detected texts
     detected_player = None
     for txt in extracted_texts:
         candidate = guess_player_name(txt, PLAYERS)
         if candidate:
+            print(f"Image URL: {image_url}\nExtracted text: {txt} --> player: {candidate}")
             detected_player = candidate
             break
 

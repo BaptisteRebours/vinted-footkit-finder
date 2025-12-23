@@ -78,7 +78,13 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
         status = data.get("status")
         url_item = data.get("url")
         price = (data.get("price") or {}).get("amount")
-        url_photo = (data.get("photo") or {}).get("full_size_url")
+        photos = data.get('photos') or []
+        urls_photo = [
+            photo.get("full_size_url") for photo in photos if photo.get("full_size_url")
+        ] if photos else []
+
+        if item_id in saved_ids:
+            continue
 
         if not title:
             continue
@@ -95,9 +101,11 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
 
         player_name = None
 
-        if is_match and url_photo:
-            
-            player_name = extract_player_name_ocr(url_photo)
+        if is_match and urls_photo:
+            for url_photo in urls_photo:
+                player_name = extract_player_name_ocr(url_photo)
+                if player_name:
+                    break
 
             if player_name and item_id not in saved_ids:
                 new_items.append(
@@ -112,7 +120,7 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
                         "player_name": player_name,
                         "url": url_item,
                         "price": price,
-                        "url_photo": url_photo,
+                        "urls_photo": urls_photo,
                         "date_added": datetime.now(timezone.utc).isoformat()
                     }
                 )

@@ -1,7 +1,8 @@
 # --- Parameters ---
 
 # Saved items db
-SAVED_ITEMS_DB = "./data/output/vinted.db"
+OUTPUT_DIR = "./data/output"
+SAVED_ITEMS_DB = OUTPUT_DIR + "/vinted.db"
 
 # Request parameters
 BASE_URL = "https://www.vinted.fr/catalog?"

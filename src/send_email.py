@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from zoneinfo import ZoneInfo
 import sqlite3
 
-from domain.request import SAVED_ITEMS_DB
+from domain.request import SAVED_ITEMS_DB, OUTPUT_DIR
 from utils.email import build_email_html
 from utils.sqlite import get_unsent_items, mark_email_sent
 
@@ -30,6 +30,7 @@ EMAIL_PORT = os.getenv("EMAIL_PORT")
 EMAIL_PWD = os.getenv("EMAIL_PWD")
 
 # Recent saved items
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 CONN = sqlite3.connect(SAVED_ITEMS_DB)
 recent_items = get_unsent_items()
 

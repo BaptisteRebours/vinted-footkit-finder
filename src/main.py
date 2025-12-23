@@ -12,6 +12,7 @@ import sys
 
 from domain.request import (
     SAVED_ITEMS_DB,
+    OUTPUT_DIR,
     BASE_URL,
     ORDER,
     MAX_RETRIES,
@@ -27,6 +28,7 @@ from utils.sqlite import create_table, get_all_items, insert_into_sqlite
 # --- Parameters ---
 
 # Saved items
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 CONN = sqlite3.connect(SAVED_ITEMS_DB)
 
 # Search parameters

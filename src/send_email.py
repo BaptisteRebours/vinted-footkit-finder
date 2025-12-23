@@ -15,8 +15,8 @@ from utils.email import items_since_last_email, build_email_html
 
 # --- Checking its time to send email ---
 now = datetime.now(ZoneInfo("Europe/Paris"))
-mail_days = {0, 1,2, 3,4,5, 6}
-if not (now.hour >= 10 and now.weekday() in mail_days):
+mail_days = {0, 3, 6}
+if not (now.hour >= 22 and now.weekday() in mail_days):
     print("Not email time, exiting.")
     exit(0)
 

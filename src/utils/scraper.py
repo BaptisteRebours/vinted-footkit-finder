@@ -8,11 +8,13 @@ from utils.extract_info import (
     extract_season,
 )
 from utils.ocr import extract_player_name_ocr
-from domain.request import SAVED_ITEMS_FILE
+from domain.request import SAVED_ITEMS_FILE, MY_KITS
 
 
 # --- Parameters ---
-
+MY_KITS_SEASON_KITTYPE = [
+    (kit["season"], kit["kit_type"]) for kit in MY_KITS
+]
 
 
 # --- Functions ---
@@ -91,8 +93,14 @@ def filter_and_build_items(items, desired_brands, desired_sizes, saved_ids):
                 player_name = extract_player_name_ocr(url_photo)
                 if player_name:
                     break
+            
+            item_to_add = (
+                player_name is not None and
+                item_id not in saved_ids and
+                (season, kit_type) not in MY_KITS_SEASON_KITTYPE
+            )
 
-            if player_name and item_id not in saved_ids:
+            if item_to_add:
                 new_items.append(
                     {
                         "id": item_id,

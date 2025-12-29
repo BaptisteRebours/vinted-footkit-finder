@@ -12,7 +12,7 @@ from domain.players import PLAYERS
 
 # --- Parameters ---
 LANGS = ["en"]
-reader = easyocr.Reader(LANGS)
+reader = easyocr.Reader(LANGS, verbose=False)
 
 
 # --- Functions ---

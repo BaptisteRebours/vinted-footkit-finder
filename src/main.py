@@ -43,7 +43,7 @@ if COOKIES_DIR :
 
 
 # --- Loading saved items db ---
-# create_table()
+create_table()
 saved_items = get_all_items()
 print(saved_items)
 saved_items_ids = {item["id"] for item in saved_items}

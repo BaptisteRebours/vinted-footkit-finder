@@ -3,16 +3,15 @@ import sqlite3
 import json
 import os
 
-from domain.request import SAVED_ITEMS_DB, OUTPUT_DIR
-
-
-# --- Parameters ---
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-CONN = sqlite3.connect(SAVED_ITEMS_DB)
-CURSOR = CONN.cursor()
+from domain.request import SAVED_ITEMS_DB
 
 
 # --- Functions ---
+
+# Get connection
+def get_connection():
+    """Get a SQLite connection."""
+    return sqlite3.connect(SAVED_ITEMS_DB)
 
 # Create
 def create_table():
@@ -21,7 +20,9 @@ def create_table():
     Returns:
         None
     """
-    CURSOR.execute("""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS saved_items (
         id TEXT PRIMARY KEY,
         title TEXT,
@@ -38,7 +39,7 @@ def create_table():
         email_sent INTEGER DEFAULT 0
     )
     """)
-    CONN.commit()
+    conn.commit()
 
 # Insert
 def insert_into_sqlite(item):
@@ -50,7 +51,9 @@ def insert_into_sqlite(item):
     Returns:
         None
     """
-    CURSOR.execute("""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
     INSERT OR IGNORE INTO saved_items (
         id, title, brand, status, size, season, kit_type,
         player_name, url, price, url_photo, date_added
@@ -69,7 +72,7 @@ def insert_into_sqlite(item):
         item["url_photo"],
         item["date_added"]
     ))
-    CONN.commit()
+    conn.commit()
 
 # Get all items
 def get_all_items():
@@ -78,12 +81,14 @@ def get_all_items():
     Returns:
         list of dict: List of all items.
     """
-    CURSOR.execute("""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
     SELECT *
     FROM saved_items
     """)
-    data = CURSOR.fetchall()
-    columns = [desc[0] for desc in CURSOR.description]
+    data = cursor.fetchall()
+    columns = [desc[0] for desc in cursor.description]
     all_items = [dict(zip(columns, row)) for row in data]
     return all_items
 
@@ -94,13 +99,15 @@ def get_unsent_items():
     Returns:
         list of dict: List of unsent items.
     """
-    CURSOR.execute("""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
     SELECT *
     FROM saved_items
     WHERE email_sent = 0
     """)
-    data = CURSOR.fetchall()
-    columns = [desc[0] for desc in CURSOR.description]
+    data = cursor.fetchall()
+    columns = [desc[0] for desc in cursor.description]
     items_to_email = [dict(zip(columns, row)) for row in data]
     return items_to_email
 
@@ -112,12 +119,14 @@ def mark_email_sent():
     Returns:
         None
     """
-    CURSOR.execute("""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
     UPDATE saved_items
     SET email_sent = 1
     WHERE email_sent = 0
     """)
-    CONN.commit()
+    conn.commit()
 
 
 # --- Main Execution ---

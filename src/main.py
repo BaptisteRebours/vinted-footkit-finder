@@ -29,7 +29,6 @@ from utils.sqlite import create_table, get_all_items, insert_into_sqlite
 
 # Saved items
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-CONN = sqlite3.connect(SAVED_ITEMS_DB)
 
 # Search parameters
 SEARCH_TEXTS_BRANDS = [SEARCH_TEXT] + [f"{SEARCH_TEXT} {b}" for b in DESIRED_BRANDS]

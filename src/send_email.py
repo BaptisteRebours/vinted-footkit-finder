@@ -16,7 +16,7 @@ from utils.sqlite import get_unsent_items, mark_email_sent
 
 # --- Checking its time to send email ---
 now = datetime.now(ZoneInfo("Europe/Paris"))
-mail_days = {0,1,2,3,4,5,6}
+mail_days = {0, 3, 5}
 if not (now.hour >= 22 and now.weekday() in mail_days):
     print("Not email time, exiting.")
     exit(0)
